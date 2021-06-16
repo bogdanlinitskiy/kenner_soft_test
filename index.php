@@ -1,134 +1,18 @@
 <?php
 
-abstract class Robot {
-    private $weight;
-    private $height;
-    private $speed;
+use \Robot\Robot;
+use \Robot\RobotFactory;
+use \Robot\Robot1;
+use \Robot\Robot2;
+use \Robot\MergeRobot;
 
+use \Robot\Robot3;
 
-    public function getWeight()
-    {
-        return $this->weight;
-    }
+spl_autoload_register(function ($class) {
+    require_once $class . '.php';
+});
 
-    public function setWeight(int $weight)
-    {
-        $this->weight = $weight;
-    }
-
-    public function getHeight()
-    {
-        
-    }
-
-    public function setHeight(int $height)
-    {
-        $this->height = $height;
-    }
-
-    public function getSpeed()
-    {
-        
-    }
-
-    public function setSpeed(int $speed)
-    {
-        $this->speed = $speed;
-    }
-}
-
-class Robot1 extends Robot {
-}
-
-class Robot2 extends Robot {
-}
-
-class MergeRobot extends Robot
-{
-    private $robots;
-
-    // change logic
-    public function addRobot($robots)
-    {
-        $this->robots = $robots;
-    }
-
-    public function configureRobot()
-    {
-        foreach ($this->robots as $robot) {
-            $heightSum += $robot->getHeight();
-            $weightSum += $robot->getWeight();
-            $speed = $robot->getSpeed() < $speed ? $robot->getSpeed() : $speed;
-        }
-
-        echo '<br>' . $heightSum . ' ' . $weightSum . ' ' . $speed;
-    }
-}
-
-class RobotFactory {
-    private $robotTypes = [];
-
-    public function addType(Robot $robotType): RobotFactory
-    {
-        $this->robotTypes[] = get_class($robotType);
-        return $this;
-    }
-
-    // make private after tests
-    public function checkRobotTypes($robotType): bool
-    {
-        if (in_array(get_class($robotType), $this->robotTypes)) {
-            return true;
-        } else {
-            throw new Exception('This type of robot is not supported by factory');
-        }
-    }
-
-    /** 
-     * numberOfRobots - number of robots to be added
-     * robotFields - array of ['height', 'weight', 'speed] fields for each robot
-     */
-    // add Exception
-    public function createRobot1(int $numberOfRobots, array $robotFields): array
-    {
-        return $this->createRobots($numberOfRobots, $robotFields, get_class(new Robot1));
-    }
-
-    public function createRobot2($numberOfRobots, array $robotFields): array
-    {
-        return $this->createRobots($numberOfRobots, $robotFields, get_class(new Robot2));
-    }
-
-    public function createMergeRobot($numberOfRobots, array $robotFields): array
-    {
-        return $this->createRobots($numberOfRobots, $robotFields, get_class(new MergeRobot));
-    }
-
-    private function createRobots(int $numberOfRobots, array $robotFields, $robotClass): array
-    {
-        if ($numberOfRobots !== count($robotFields)) {
-            throw new Exception('Number of robots to create must be equal to tobot fields');
-        } else {
-            foreach($robotFields as $oneRobotFields) {
-                $robot = new $robotClass();
-                $robot->setWeight($oneRobotFields['weight']);
-                $robot->setHeight($oneRobotFields['height']);
-                $robot->setSpeed($oneRobotFields['speed']);
-    
-                $arrayOfRobots[] = $robot;
-            }
-        }
-        
-        return $arrayOfRobots;
-    }
-}
-
-$factory = new RobotFactory();
-
-$factory->addType(new Robot1());
-$factory->addType(new Robot2());
-
-$firstRobotFields = [
+$firstRobotData = [
     [
         'weight' => 123,
         'height' => 124,
@@ -156,8 +40,7 @@ $firstRobotFields = [
     ]
 ];
 
-
-$secondRobotFields = [
+$secondRobotData = [
     [
         'weight' => 1000,
         'height' => 1001,
@@ -170,15 +53,64 @@ $secondRobotFields = [
     ]
 ];
 
-$firstRobots = $factory->createRobot1(5, $firstRobotFields);
-$secondRobots = $factory->createRobot2(2, $secondRobotFields);
+$thirdRobotData = [
+    [
+        'weight' => 555,
+        'height' => 555,
+        'speed'  => 555
+    ],
+    [
+        'weight' => 999,
+        'height' => 999,
+        'speed'  => 999
+    ],
+    [
+        'weight' => 888,
+        'height' => 888,
+        'speed'  => 888
+    ],
+    [
+        'weight' => 777,
+        'height' => 777,
+        'speed'  => 777
+    ]
+];
 
-var_dump($firstRobots);
-var_dump($secondRobots);
+$factory = new RobotFactory();
+
+$factory->addType(new Robot1());
+$factory->addType(new Robot2());
+
+// $firstRobots = $factory->createRobot1(5, $firstRobotData);
+$secondRobots = $factory->createRobot2(2, $secondRobotData);
 
 $mergeRobot = new MergeRobot();
 $mergeRobot->addRobot($secondRobots);
-$mergeRobot->configureRobot();
+
+$result = $mergeRobot->configureRobot();
+
 $factory->addType($mergeRobot);
-// $res = reset($factory->createMergeRobot(1));
-// var_dump($a);
+echo sprintf(
+    'Resulted robot: weight: %s, height: %s, speed: %s',
+    $result->getWeight(),
+    $result->getHeight(),
+    $result->getSpeed()
+);
+
+$factory->addType(new Robot3());
+
+$thirdRobots = $factory->createRobot3(4, $thirdRobotData);
+
+$mergeRobot = new MergeRobot();
+$mergeRobot->addRobot($thirdRobots);
+
+$result = $mergeRobot->configureRobot();
+$factory->addType($mergeRobot);
+
+echo '<br>';
+echo sprintf(
+    'Resulted robot: weight: %s, height: %s, speed: %s',
+    $result->getWeight(),
+    $result->getHeight(),
+    $result->getSpeed()
+);
