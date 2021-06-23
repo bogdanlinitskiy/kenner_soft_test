@@ -8,12 +8,11 @@ class MergeRobot extends Robot
 {
     private $robotsToMerge = [];
 
-    // change logic
     public function addRobot($robots): self
     {
         if (is_array($robots)) {
             $this->robotsToMerge = array_merge($this->robotsToMerge, $robots);
-        } elseif($robots instanceof Robot && count($robots) == 1) {
+        } elseif (count($robots) == 1 && $robots instanceof Robot) {
             $this->robotsToMerge[] = $robots;
         } else {
             throw new \Exception('Robots should be instance of Robot or array');
@@ -22,22 +21,29 @@ class MergeRobot extends Robot
         return $this;
     }
 
-    public function configureRobot(): self
+    public function getRobotsToMerge(): array
     {
-        foreach ($this->robotsToMerge as $robot) {
-            $weightSum += $robot->getWeight();
-            $heightSum += $robot->getHeight();
-            $speed = !isset($speed) ? $robot->getSpeed()
-            : $robot->getSpeed() < $speed
-            ? $robot->getSpeed()
-            : $speed;
-        }
+        return $this->robotsToMerge;
+    }
 
-        $mergeRobot = new MergeRobot();
-        $mergeRobot->setWeight($weightSum);
-        $mergeRobot->setHeight($heightSum);
-        $mergeRobot->setSpeed($speed);
+    public function getWeight(): int
+    {
+        return array_sum(array_map(function ($robot) {
+            return $robot->getWeight();
+        }, $this->robotsToMerge));
+    }
 
-        return $mergeRobot;
+    public function getHeight(): int
+    {
+        return array_sum(array_map(function ($robot) {
+            return $robot->getHeight();
+        }, $this->robotsToMerge));
+    }
+
+    public function getSpeed(): int
+    {
+        return min(array_map(function ($robot) {
+            return $robot->getSpeed();
+        }, $this->robotsToMerge));
     }
 }

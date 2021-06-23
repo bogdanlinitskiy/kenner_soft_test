@@ -9,80 +9,64 @@ use Robot\MergeRobot;
 
 use Robot\Robot3;
 
-class RobotFactory {
+class RobotFactory
+{
     private $robotTypes = [];
 
-    public function addType(Robot $robotType): RobotFactory
+    public function addType(Robot $robot): RobotFactory
     {
-        $this->robotTypes[] = get_class($robotType);
+        array_push($this->robotTypes, ($robot));
         return $this;
     }
 
     // if we adding types to factory, then we need to control them
     private function checkRobotTypes($robotType): bool
     {
-        if (in_array(get_class($robotType), $this->robotTypes)) {
-            return true;
-        } else {
-            throw new \Exception('This type of robot is not supported by factory');
-        }
-    }
-
-    /** 
-     * numberOfRobots - number of robots to be added
-     * robotFields - array of ['height', 'weight', 'speed] fields for each robot
-    */
-    public function createRobot1(int $numberOfRobots, array $robotFields): array
-    {
-        $this->checkRobotTypes(new Robot1());
-        return $this->createRobots($numberOfRobots, $robotFields, get_class(new Robot1));
-    }
-
-    /** 
-     * numberOfRobots - number of robots to be added
-     * robotFields - array of ['height', 'weight', 'speed] fields for each robot
-    */
-    public function createRobot2($numberOfRobots, array $robotFields): array
-    {
-        $this->checkRobotTypes(new Robot2());
-        return $this->createRobots($numberOfRobots, $robotFields, get_class(new Robot2));
-    }
-
-    /** 
-     * numberOfRobots - number of robots to be added
-     * robotFields - array of ['height', 'weight', 'speed] fields for each robot
-    */
-    public function createRobot3($numberOfRobots, array $robotFields): array
-    {
-        $this->checkRobotTypes(new Robot3());
-        return $this->createRobots($numberOfRobots, $robotFields, get_class(new Robot3));
-    }
-
-    /** 
-     * numberOfRobots - number of robots to be added
-     * robotFields - array of ['height', 'weight', 'speed] fields for each robot
-    */
-    public function createMergeRobot($numberOfRobots, array $robotFields): array
-    {
-        $this->checkRobotTypes(new MergeRobot());
-        return $this->createRobots($numberOfRobots, $robotFields, get_class(new MergeRobot));
-    }
-
-    private function createRobots(int $numberOfRobots, array $robotFields, $robotClass): array
-    {
-        if ($numberOfRobots !== count($robotFields)) {
-            throw new \Exception('Number of robots to create must be equal to tobot fields');
-        } else {
-            foreach($robotFields as $oneRobotFields) {
-                $robot = new $robotClass();
-                $robot->setWeight($oneRobotFields['weight']);
-                $robot->setHeight($oneRobotFields['height']);
-                $robot->setSpeed($oneRobotFields['speed']);
-    
-                $arrayOfRobots[] = $robot;
+        foreach ($this->robotTypes as $type) {
+            $robotReflection = new \ReflectionClass($type);
+            if ($robotReflection->getShortName() === $robotType) {
+                return true;
             }
         }
+
+        throw new \Exception('This type of robot is not supported by factory');
+    }
+
+    // refactor to createRobotN handler
+    public function __call($name, $arguments)
+    {
+        $method = substr($name, 0, 6);
+        if ($method !== 'create') {
+            throw new \Exception('This method is not allowed here');
+        }
         
-        return $arrayOfRobots;
+        $robotClass = substr($name, 6);
+        $numberOfRobots = $arguments[0];
+
+        $this->checkRobotTypes($robotClass);
+        if (!is_integer($numberOfRobots) || $numberOfRobots <= 0) {
+            throw new \InvalidArgumentException('Wrong count number');
+        }
+        return $this->createRobots($numberOfRobots, $robotClass);
+    }   
+
+    private function createRobots(int $numberOfRobots, string $robotClass)
+    {
+        $this->checkRobotTypes($robotClass);
+        $result = [];
+        for ($i = 0; $i < $numberOfRobots; $i++) {
+            foreach ($this->robotTypes as $robot) {
+                $robotReflection = new \ReflectionClass($robot);
+                if ($robotReflection->getShortName() === $robotClass) {
+                    $result[] = clone $robot;
+                }
+            }
+        }
+        return $result;
+    }
+
+    public function getRobotTypes()
+    {
+        return $this->robotTypes;
     }
 }
